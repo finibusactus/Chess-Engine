@@ -4,6 +4,11 @@
 #include <bitset>
 
 class Bitboard {
+
+public:
+  Bitboard();
+  void printBoard();
+
 private:
   std::bitset<64> whitePawns;
   std::bitset<64> whiteRooks;
@@ -19,9 +24,14 @@ private:
   std::bitset<64> blackQueens;
   std::bitset<64> blackKing;
 
-public:
-  Bitboard();
-  void printBoard();
+  std::bitset<64> getOccupiedSquares();
+  std::bitset<64> getEmptySqures();
+
+  std::bitset<64> whitePushSingleTarget();
+  std::bitset<64> whitePushDoubleTarget();
+
+  std::bitset<64> blackPushSingleTarget();
+  std::bitset<64> blackPushDoubleTarget();
 };
 
 #endif
