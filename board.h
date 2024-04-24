@@ -3,13 +3,16 @@
 
 #include <bitset>
 
-class Bitboard {
+struct move;
 
+class Bitboard {
 public:
   Bitboard();
   void printBoard();
 
 private:
+  bool whiteToMove;
+
   std::bitset<64> whitePawns;
   std::bitset<64> whiteRooks;
   std::bitset<64> whiteKnights;
@@ -32,6 +35,7 @@ private:
 
   std::bitset<64> blackPushSingleTarget();
   std::bitset<64> blackPushDoubleTarget();
-};
 
+  void makeMove(move);
+};
 #endif
