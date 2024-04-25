@@ -17,26 +17,27 @@ enum PieceNames {
   BLACK_KING
 };
 
-/* clang-format off */ 
+/* clang-format off */
 // prevents clang-format from expandint this enum into 64 lines!
 enum Squares {
-  A8, A7, A6, A5, A4, A3, A2, A1, 
-  B8, B7, B6, B5, B4, B3, B2, B1, 
-  C8, C7, C6, C5, C4, C3, C2, C1, 
-  D8, D7, D6, D5, D4, D3, D2, D1, 
-  E8, E7, E6, E5, E4, E3, E2, E1, 
-  F8, F7, F6, F5, F4, F3, F2, F1, 
-  G8, G7, G6, G5, G4, G3, G2, G1,
-  H8, H7, H6, H5, H4, H3, H2, H1
+  A8=56, B8=57, C8=58, D8=59, E8=60, F8=61, G8=62, H8=63,
+  A7=48, B7=49, C7=50, D7=51, E7=52, F7=53, G7=54, H7=55,
+  A6=40, B6=41, C6=42, D6=43, E6=44, F6=45, G6=46, H6=47,
+  A5=32, B5=33, C5=34, D5=35, E5=36, F5=37, G5=38, H5=39,
+  A4=24, B4=25, C4=26, D4=27, E4=28, F4=29, G4=30, H4=31,
+  A3=16, B3=17, C3=18, D3=19, E3=20, F3=21, G3=22, H3=23,
+  A2=8,  B2=9,  C2=10, D2=11, E2=12, F2=13, G2=14, H2=15,
+  A1=0,  b1=1,  C1=2,  D1=3,  E1=4,  F1=5,  g1=6,  H1=7 
 };
 /* clang-format on */
 
-struct {
+struct Move {
   PieceNames pieceName;
   Squares originalSquare;
-  Squares destSqure;
+  Squares destSquare;
   PieceNames promotedPieceName;
-} move;
+};
+
 Bitboard::Bitboard() {
   whiteToMove = true;
 
@@ -83,6 +84,39 @@ std::bitset<64> Bitboard::blackPushDoubleTarget() {
   return moveSouth(singlePushes) & getEmptySqures() & fifthRank;
 }
 
+void Bitboard::makeMove(const Move *move) {
+  std::cout << move->originalSquare << move->destSquare;
+  std::cout << (move->originalSquare ^ move->destSquare);
+  switch (move->pieceName) {
+  case WHITE_PAWN:
+    whitePawns ^= move->originalSquare ^ move->destSquare;
+  case WHITE_ROOK:
+    whiteRooks ^= move->originalSquare ^ move->destSquare;
+  case WHITE_KNIGHT:
+    whiteKnights ^= move->originalSquare ^ move->destSquare;
+  case WHITE_BISHOP:
+    whiteBishops ^= move->originalSquare ^ move->destSquare;
+  case WHITE_QUEEN:
+    whiteQueens ^= move->originalSquare ^ move->destSquare;
+  case WHITE_KING:
+    whiteKing ^= move->originalSquare ^ move->destSquare;
+  case BLACK_PAWN:
+    blackPawns ^= move->originalSquare ^ move->destSquare;
+  case BLACK_ROOK:
+    blackRooks ^= move->originalSquare ^ move->destSquare;
+  case BLACK_KNIGHT:
+    blackKnights ^= move->originalSquare ^ move->destSquare;
+  case BLACK_BISHOP:
+    blackBishops ^= move->originalSquare ^ move->destSquare;
+  case BLACK_QUEEN:
+    blackQueens ^= move->originalSquare ^ move->destSquare;
+  case BLACK_KING:
+    blackKing ^= move->originalSquare ^ move->destSquare;
+    break;
+  default:
+    std::cout << "none";
+  }
+}
 void Bitboard::printBoard() {
   for (int i = 63; i >= 0; i--) {
     // We have to flip the bit to deal with endiness so it now goes, 56, 57,
@@ -120,5 +154,9 @@ void Bitboard::printBoard() {
     }
   }
   std::cout << std::endl;
-  whitePawns = whitePushSingleTarget();
+  Move move;
+  move.pieceName = WHITE_PAWN;
+  move.originalSquare = A2;
+  move.destSquare = A4;
+  makeMove(&move);
 }
