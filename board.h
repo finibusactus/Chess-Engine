@@ -3,8 +3,6 @@
 
 #include <bitset>
 
-struct Move;
-
 class Bitboard {
 public:
   Bitboard();
@@ -36,6 +34,8 @@ private:
   std::bitset<64> blackPushSingleTarget();
   std::bitset<64> blackPushDoubleTarget();
 
-  void makeMove(const Move *move);
+  // testing only!! DO NOT RELY ON THIS.
+public:
+  void makeMove(int startIndex, int endIndex);
 };
 #endif

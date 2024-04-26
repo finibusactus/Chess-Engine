@@ -2,42 +2,6 @@
 #include <bitset>
 #include <iostream>
 
-enum PieceNames {
-  WHITE_PAWN,
-  WHITE_ROOK,
-  WHITE_KNIGHT,
-  WHITE_BISHOP,
-  WHITE_QUEEN,
-  WHITE_KING,
-  BLACK_PAWN,
-  BLACK_ROOK,
-  BLACK_KNIGHT,
-  BLACK_BISHOP,
-  BLACK_QUEEN,
-  BLACK_KING
-};
-
-/* clang-format off */
-// prevents clang-format from expandint this enum into 64 lines!
-enum Squares {
-  A8=56, B8=57, C8=58, D8=59, E8=60, F8=61, G8=62, H8=63,
-  A7=48, B7=49, C7=50, D7=51, E7=52, F7=53, G7=54, H7=55,
-  A6=40, B6=41, C6=42, D6=43, E6=44, F6=45, G6=46, H6=47,
-  A5=32, B5=33, C5=34, D5=35, E5=36, F5=37, G5=38, H5=39,
-  A4=24, B4=25, C4=26, D4=27, E4=28, F4=29, G4=30, H4=31,
-  A3=16, B3=17, C3=18, D3=19, E3=20, F3=21, G3=22, H3=23,
-  A2=8,  B2=9,  C2=10, D2=11, E2=12, F2=13, G2=14, H2=15,
-  A1=0,  b1=1,  C1=2,  D1=3,  E1=4,  F1=5,  g1=6,  H1=7 
-};
-/* clang-format on */
-
-struct Move {
-  PieceNames pieceName;
-  Squares originalSquare;
-  Squares destSquare;
-  PieceNames promotedPieceName;
-};
-
 Bitboard::Bitboard() {
   whiteToMove = true;
 
@@ -84,39 +48,38 @@ std::bitset<64> Bitboard::blackPushDoubleTarget() {
   return moveSouth(singlePushes) & getEmptySqures() & fifthRank;
 }
 
-void Bitboard::makeMove(const Move *move) {
-  std::cout << move->originalSquare << move->destSquare;
-  std::cout << (move->originalSquare ^ move->destSquare);
-  switch (move->pieceName) {
-  case WHITE_PAWN:
-    whitePawns ^= move->originalSquare ^ move->destSquare;
-  case WHITE_ROOK:
-    whiteRooks ^= move->originalSquare ^ move->destSquare;
-  case WHITE_KNIGHT:
-    whiteKnights ^= move->originalSquare ^ move->destSquare;
-  case WHITE_BISHOP:
-    whiteBishops ^= move->originalSquare ^ move->destSquare;
-  case WHITE_QUEEN:
-    whiteQueens ^= move->originalSquare ^ move->destSquare;
-  case WHITE_KING:
-    whiteKing ^= move->originalSquare ^ move->destSquare;
-  case BLACK_PAWN:
-    blackPawns ^= move->originalSquare ^ move->destSquare;
-  case BLACK_ROOK:
-    blackRooks ^= move->originalSquare ^ move->destSquare;
-  case BLACK_KNIGHT:
-    blackKnights ^= move->originalSquare ^ move->destSquare;
-  case BLACK_BISHOP:
-    blackBishops ^= move->originalSquare ^ move->destSquare;
-  case BLACK_QUEEN:
-    blackQueens ^= move->originalSquare ^ move->destSquare;
-  case BLACK_KING:
-    blackKing ^= move->originalSquare ^ move->destSquare;
-    break;
-  default:
-    std::cout << "none";
+void Bitboard::makeMove(int startIndex, int endIndex) {
+  auto makeMoveForSpecificBitboard = [&](std::bitset<64> &bitboard) {
+    bitboard[startIndex] = 0;
+    bitboard[endIndex] = 1;
+  };
+  if (whitePawns[startIndex]) {
+    makeMoveForSpecificBitboard(whitePawns);
+  } else if (whiteRooks[startIndex]) {
+    makeMoveForSpecificBitboard(whiteRooks);
+  } else if (whiteKnights[startIndex]) {
+    makeMoveForSpecificBitboard(whiteKnights);
+  } else if (whiteBishops[startIndex]) {
+    makeMoveForSpecificBitboard(whiteBishops);
+  } else if (whiteQueens[startIndex]) {
+    makeMoveForSpecificBitboard(whiteQueens);
+  } else if (whiteKing[startIndex]) {
+    makeMoveForSpecificBitboard(whiteKing);
+  } else if (blackPawns[startIndex]) {
+    makeMoveForSpecificBitboard(blackPawns);
+  } else if (blackRooks[startIndex]) {
+    makeMoveForSpecificBitboard(blackRooks);
+  } else if (blackKnights[startIndex]) {
+    makeMoveForSpecificBitboard(blackKnights);
+  } else if (blackBishops[startIndex]) {
+    makeMoveForSpecificBitboard(blackBishops);
+  } else if (blackQueens[startIndex]) {
+    makeMoveForSpecificBitboard(blackQueens);
+  } else if (blackKing[startIndex]) {
+    makeMoveForSpecificBitboard(blackKing);
   }
 }
+
 void Bitboard::printBoard() {
   for (int i = 63; i >= 0; i--) {
     // We have to flip the bit to deal with endiness so it now goes, 56, 57,
@@ -154,9 +117,4 @@ void Bitboard::printBoard() {
     }
   }
   std::cout << std::endl;
-  Move move;
-  move.pieceName = WHITE_PAWN;
-  move.originalSquare = A2;
-  move.destSquare = A4;
-  makeMove(&move);
 }

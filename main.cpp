@@ -1,8 +1,9 @@
 #include "board.h"
 
 int main() {
-  Bitboard Board;
-  Board.printBoard();
-  Board.printBoard();
+  Bitboard board;
+  board.printBoard();
+  board.makeMove(6, 21);
+  board.printBoard();
   return 0;
 }
