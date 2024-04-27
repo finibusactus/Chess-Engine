@@ -1,7 +1,11 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
+#include <array>
 #include <bitset>
+#include <vector>
+
+struct Move;
 
 class Bitboard {
 public:
@@ -28,14 +32,19 @@ private:
   std::bitset<64> getOccupiedSquares();
   std::bitset<64> getEmptySqures();
 
-  std::bitset<64> whitePushSingleTarget();
-  std::bitset<64> whitePushDoubleTarget();
+  std::bitset<64> whitePawnPushSingleTarget();
+  std::bitset<64> whitePawnPushDoubleTarget();
+  std::bitset<64> whitePawnPushSingleStart();
+  std::bitset<64> whitePawnPushDoubleStart();
 
-  std::bitset<64> blackPushSingleTarget();
-  std::bitset<64> blackPushDoubleTarget();
+  std::bitset<64> blackPawnPushSingleTarget();
+  std::bitset<64> blackPawnPushDoubleTarget();
+  std::bitset<64> blackPawnPushSingleStart();
+  std::bitset<64> blackPawnPushDoubleStart();
 
-  // testing only!! DO NOT RELY ON THIS.
-public:
-  void makeMove(int startIndex, int endIndex);
+  std::vector<Move> moves;
+  void generatePawnMoves();
+
+  void makeMove(Move move);
 };
 #endif
