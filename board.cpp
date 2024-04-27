@@ -2,15 +2,6 @@
 #include <bitset>
 #include <iostream>
 
-struct Move {
-  int startIndex;
-  int endIndex;
-  Move(int startIndex, int endIndex) {
-    this->startIndex = startIndex;
-    this->endIndex = endIndex;
-  }
-};
-
 int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
   for (int i = 0; i < 64; i++) {
     if (bitboard[i]) {

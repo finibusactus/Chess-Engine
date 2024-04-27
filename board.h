@@ -5,7 +5,14 @@
 #include <bitset>
 #include <vector>
 
-struct Move;
+struct Move {
+  int startIndex;
+  int endIndex;
+  Move(int startIndex, int endIndex) {
+    this->startIndex = startIndex;
+    this->endIndex = endIndex;
+  }
+};
 
 class Bitboard {
 public:
