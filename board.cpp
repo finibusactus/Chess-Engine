@@ -1,11 +1,12 @@
 #include "board.h"
 #include <bitset>
 #include <iostream>
+#include <vector>
 
 int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
   for (int i = 0; i < 64; i++) {
     if (bitboard[i]) {
-      bitboard[i] = 1;
+      bitboard[i] = 0;
       return i;
     }
   }
@@ -53,7 +54,7 @@ std::bitset<64> Bitboard::whitePawnPushSingleStart() {
   return moveSouth(whitePawnPushSingleTarget());
 }
 std::bitset<64> Bitboard::whitePawnPushDoubleStart() {
-  return moveSouth(whitePawnPushDoubleTarget());
+  return moveSouth(moveSouth(whitePawnPushDoubleTarget()));
 }
 
 std::bitset<64> Bitboard::blackPawnPushSingleTarget() {
@@ -68,17 +69,51 @@ std::bitset<64> Bitboard::blackPawnPushSingleStart() {
   return moveNorth(blackPawnPushSingleTarget());
 }
 std::bitset<64> Bitboard::blackPawnPushDoubleStart() {
-  return moveNorth(blackPawnPushDoubleTarget());
+  return moveNorth(moveNorth(blackPawnPushDoubleTarget()));
 }
 
-void Bitboard::generatePawnMoves() {
-  std::bitset<64> whitePawnStart = whitePawnPushDoubleStart();
-  std::bitset<64> whitePawnTarget = whitePawnPushDoubleTarget();
-  setZeroAndReturnIndexOfLSB(whitePawnStart);
-  setZeroAndReturnIndexOfLSB(whitePawnStart);
+void addValidMovesToMoves(std::vector<Move> moves,
+                          std::bitset<64> startBitboard,
+                          std::bitset<64> endBitboard) {
+  while (true) {
+    int startIndex = setZeroAndReturnIndexOfLSB(startBitboard);
+    int endIndex = setZeroAndReturnIndexOfLSB(endBitboard);
+    if (startIndex == -1 || endIndex == -1) {
+      break;
+    } else {
+      moves.push_back(Move(startIndex, endIndex));
+    }
+  }
+};
+
+std::vector<Move> Bitboard::returnAllWhitePawnMoves() {
+  std::vector<Move> moves;
+  addValidMovesToMoves(moves, whitePawnPushSingleStart(),
+                       whitePawnPushSingleTarget());
+  addValidMovesToMoves(moves, whitePawnPushDoubleStart(),
+                       whitePawnPushDoubleTarget());
+  return moves;
 }
 
-void Bitboard::makeMove(Move move) {
+std::vector<Move> Bitboard::returnAllBlackPawnMoves() {
+  std::vector<Move> moves;
+  addValidMovesToMoves(moves, blackPawnPushSingleStart(),
+                       blackPawnPushSingleTarget());
+  addValidMovesToMoves(moves, blackPawnPushDoubleStart(),
+                       blackPawnPushDoubleTarget());
+  return moves;
+}
+
+std::vector<Move> Bitboard::returnAllValidPawnMoves() {
+  if (whiteToMove) {
+    return returnAllWhitePawnMoves();
+  } else {
+    return returnAllBlackPawnMoves();
+  }
+}
+
+void Bitboard::makeMoveAndUpdateClassVaribles(Move move) {
+  whiteToMove = !whiteToMove;
   int startIndex = move.startIndex;
   int endIndex = move.endIndex;
   auto makeMoveForSpecificBitboard = [&](std::bitset<64> &bitboard) {
@@ -148,5 +183,4 @@ void Bitboard::printBoard() {
       std::cout << "\n";
     }
   }
-  std::cout << std::endl;
 }

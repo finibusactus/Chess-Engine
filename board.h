@@ -14,6 +14,13 @@ struct Move {
   }
 };
 
+/*
+No functions in this class carry side effects EXCEPT those clearly listed eg.
+makeMoveAndUpdateClassVariables(Move move);
+
+Some implementation functions will modify parameters but these should also be
+clealy listed by void func(&parameter), these functions tend to be more local in
+scope, otherwise a more declarative name is needed*/
 class Bitboard {
 public:
   Bitboard();
@@ -49,9 +56,11 @@ private:
   std::bitset<64> blackPawnPushSingleStart();
   std::bitset<64> blackPawnPushDoubleStart();
 
-  std::vector<Move> moves;
-  void generatePawnMoves();
+  std::vector<Move> returnAllWhitePawnMoves();
+  std::vector<Move> returnAllBlackPawnMoves();
+  // Not implemented, it currently returns all moves; regardless of validity.
+  std::vector<Move> returnAllValidPawnMoves();
 
-  void makeMove(Move move);
+  void makeMoveAndUpdateClassVaribles(Move move);
 };
 #endif
