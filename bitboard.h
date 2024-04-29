@@ -2,6 +2,7 @@
 #define BOARD_H
 
 #include <bitset>
+#include <istream>
 #include <vector>
 
 struct Move {
@@ -14,8 +15,11 @@ struct Move {
 };
 
 /*
-No functions in this class carry side effects EXCEPT those clearly listed eg.
-makeMoveAndUpdateClassVariables(Move move);
+Some functions may change class variables eg.
+makeMoveAndUpdateClassVariables(Move move).
+NOTE: some functions to calcualate moves and search will DEPEND (unpure) on
+class variables such as whiteToMove etc. (mostly functions such as
+addAllPawnMoves and search))
 
 Some implementation functions will modify parameters but these should also be
 clealy listed by void func(&parameter) eg.
@@ -24,6 +28,7 @@ class Bitboard {
 public:
   Bitboard();
   void printBoard();
+  void loadFENString(std::string FENString);
 
 public:
   bool whiteToMove;
@@ -72,6 +77,9 @@ public:
 
   void addAllPawnMoves(std::vector<Move> &moves);
   void addAllKnightMoves(std::vector<Move> &moves);
+  void addAllBishopAndQueenDiagonalMoves(std::vector<Move> &moves);
   void makeMoveAndUpdateClassVaribles(Move move);
+
+  void clearAllData();
 };
 #endif

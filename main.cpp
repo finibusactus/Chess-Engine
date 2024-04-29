@@ -5,14 +5,9 @@ int main() {
   Bitboard board;
   board.printBoard();
   std::vector<Move> moves;
-  std::cout << board.whitePawnEastCaptureStart() << '\n';
-  std::cout << board.whitePawnWestCaptureStart() << '\n';
-  std::cout << board.whitePawnEastCaptureTarget() << '\n';
-  std::cout << board.whitePawnWestCaptureTarget() << '\n';
-  board.addAllWhitePawnMoves(moves);
-  for (Move move : moves) {
-    std::cout << move.startIndex << "||" << move.endIndex << '\n';
-  }
+  board.loadFENString(
+      "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
+  std::cout << '\n';
   board.printBoard();
   return 0;
 }

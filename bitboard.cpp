@@ -1,6 +1,9 @@
 #include "bitboard.h"
+#include <array>
 #include <bitset>
+#include <cctype>
 #include <iostream>
+#include <tuple>
 #include <vector>
 
 int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
@@ -38,22 +41,43 @@ std::bitset<64> moveSouth(const std::bitset<64> board) { return board >> 8; }
 std::bitset<64> moveEast(std::bitset<64> board) {
   return (board & notHFile) << 1;
 }
-std::bitset<64> moveNorthEast(std::bitset<64> board) {
-  return (board & notHFile) << 9;
-}
-std::bitset<64> moveSouthEast(std::bitset<64> board) {
-  return (board & notHFile) >> 7;
-}
 std::bitset<64> moveWest(std::bitset<64> board) {
   return (board & notAFile) >> 1;
 }
+std::bitset<64> moveSouthEast(std::bitset<64> board) {
+  return moveEast(moveSouth(board));
+}
 std::bitset<64> moveSouthWest(std::bitset<64> board) {
-  return (board & notAFile) >> 9;
+  return moveWest(moveSouth(board));
+}
+std::bitset<64> moveNorthEast(std::bitset<64> board) {
+  return moveEast(moveNorth(board));
 }
 std::bitset<64> moveNorthWest(std::bitset<64> board) {
-  return (board & notAFile) << 7;
+  return moveWest(moveNorth(board));
 }
-
+std::bitset<64> moveAnyDirection(std::bitset<64> board, int xTranslation,
+                                 int yTranslation) {
+  while (xTranslation) {
+    if (xTranslation > 0) {
+      xTranslation--;
+      board = moveWest(board);
+    } else {
+      xTranslation++;
+      board = moveEast(board);
+    };
+  }
+  while (yTranslation) {
+    if (yTranslation > 0) {
+      yTranslation--;
+      board = moveSouth(board);
+    } else {
+      yTranslation++;
+      board = moveNorth(board);
+    }
+  }
+  return board;
+}
 std::bitset<64> Bitboard::getWhitePieceSquares() {
   return whitePawns | whiteRooks | whiteKnights | whiteBishops | whiteQueens |
          whiteKing;
@@ -93,7 +117,6 @@ std::bitset<64> Bitboard::whitePawnEastCaptureStart() {
 std::bitset<64> Bitboard::whitePawnWestCaptureStart() {
   return moveSouthEast(whitePawnWestCaptureTarget());
 }
-
 std::bitset<64> Bitboard::blackPawnPushSingleTarget() {
   return moveSouth(blackPawns) & getEmptySqures();
 }
@@ -180,9 +203,48 @@ void Bitboard::addAllPawnMoves(std::vector<Move> &moves) {
 }
 
 void Bitboard::addAllKnightMoves(std::vector<Move> &moves) {
+  const std::array<std::tuple<int, int>, 8> possibleKnightMoves = {
+      std::make_tuple<int, int>(-1, 2),  std::make_tuple<int, int>(1, 2),
+      std::make_tuple<int, int>(2, 1),   std::make_tuple<int, int>(2, -1),
+      std::make_tuple<int, int>(1, -2),  std::make_tuple<int, int>(-1, -2),
+      std::make_tuple<int, int>(-2, -1), std::make_tuple<int, int>(-2, 1)};
   std::bitset<64> knightsBitboard = whiteKnights;
-  if (not whiteToMove) {
+  if (!whiteToMove) {
     knightsBitboard = blackKnights;
+  }
+  for (std::tuple<int, int> translation : possibleKnightMoves) {
+    std::bitset<64> targetBitboard = moveAnyDirection(
+        knightsBitboard, std::get<0>(translation), std::get<1>(translation));
+    std::cout << targetBitboard << "||" << knightsBitboard << 1 << '\n';
+    std::cout << std::get<0>(translation) << std::get<1>(translation) << '\n';
+    if (whiteToMove) {
+      targetBitboard &= ~getWhitePieceSquares();
+    } else {
+      targetBitboard &= ~getBlackPieceSquares();
+    }
+    addValidMovesToMoves(moves,
+                         moveAnyDirection(targetBitboard,
+                                          -std::get<0>(translation),
+                                          -std::get<1>(translation)),
+                         targetBitboard);
+    std::cout << targetBitboard << "||" << knightsBitboard << 2 << '\n';
+  }
+}
+
+void Bitboard::addAllBishopAndQueenDiagonalMoves(std::vector<Move> &moves) {
+  std::bitset<64> startBitboard = whiteBishops | whiteQueens;
+  if (!whiteToMove) {
+    startBitboard = blackBishops | blackQueens;
+  }
+  std::bitset<64> targetBitboard = startBitboard;
+  for (int i = 0; i < 8; i++) {
+    targetBitboard = moveNorthWest(targetBitboard);
+    if (whiteToMove) {
+      targetBitboard &= ~getWhitePieceSquares();
+    } else {
+      targetBitboard &= ~getBlackPieceSquares();
+    }
+    addValidMovesToMoves(moves, moveSouthEast(targetBitboard), targetBitboard);
   }
 }
 
@@ -257,4 +319,82 @@ void Bitboard::printBoard() {
       std::cout << "\n";
     }
   }
+}
+
+void Bitboard::loadFENString(std::string FENString) {
+  clearAllData();
+  int currentIndex = 63;
+  int flippedInternalIndex = currentIndex ^ 7;
+  for (char ch : FENString) {
+    while (currentIndex >= 0) {
+      if (ch == '/') {
+        currentIndex++;
+        break;
+      } else if (ch == ' ') {
+        break;
+      }
+      if (isdigit(ch) && ch != ' ') {
+        std::cout << "I am a digit" << currentIndex;
+        currentIndex -= ch;
+      } else {
+        std::cout << ch << "||" << flippedInternalIndex;
+        switch (ch) {
+        case 'r':
+          blackRooks[flippedInternalIndex] = 1;
+          break;
+        case 'n':
+          blackKnights[flippedInternalIndex] = 1;
+          break;
+        case 'b':
+          blackBishops[flippedInternalIndex] = 1;
+          break;
+        case 'q':
+          blackQueens[flippedInternalIndex] = 1;
+          break;
+        case 'k':
+          blackKing[flippedInternalIndex] = 1;
+          break;
+        case 'R':
+          whiteRooks[flippedInternalIndex] = 1;
+          break;
+        case 'N':
+          whiteKnights[flippedInternalIndex] = 1;
+          break;
+        case 'B':
+          whiteBishops[flippedInternalIndex] = 1;
+          break;
+        case 'Q':
+          whiteQueens[flippedInternalIndex] = 1;
+          break;
+        case 'K':
+          whiteKing[flippedInternalIndex] = 1;
+        }
+        currentIndex--;
+      }
+      flippedInternalIndex = currentIndex ^ 7;
+      break;
+    }
+    if (currentIndex > 0) {
+      continue;
+    }
+    whiteToMove = ch == 'w';
+    switch (ch) { break; }
+  }
+}
+void Bitboard::clearAllData() {
+  whiteToMove = true;
+
+  whitePawns.reset();
+  whiteRooks.reset();
+  whiteKnights.reset();
+  whiteBishops.reset();
+  whiteQueens.reset();
+  whiteKing.reset();
+
+  blackPawns.reset();
+  blackRooks.reset();
+  blackKnights.reset();
+  blackBishops.reset();
+  blackQueens.reset();
+  blackKing.reset();
 }
