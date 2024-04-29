@@ -1,4 +1,4 @@
-#include "board.h"
+#include "bitboard.h"
 #include <bitset>
 #include <iostream>
 #include <vector>
@@ -31,15 +31,40 @@ Bitboard::Bitboard() {
   blackKing = 0x1000000000000000;
 };
 
+std::bitset<64> notAFile = ~0x0101010101010101;
+std::bitset<64> notHFile = ~0x8080808080808080;
 std::bitset<64> moveNorth(const std::bitset<64> board) { return board << 8; }
 std::bitset<64> moveSouth(const std::bitset<64> board) { return board >> 8; }
-
-std::bitset<64> Bitboard::getOccupiedSquares() {
-  return whitePawns | whiteRooks | whiteKnights | whiteBishops | whiteQueens |
-         whiteKing | blackPawns | blackRooks | blackKnights | blackBishops |
-         blackQueens | blackKing;
+std::bitset<64> moveEast(std::bitset<64> board) {
+  return (board & notHFile) << 1;
+}
+std::bitset<64> moveNorthEast(std::bitset<64> board) {
+  return (board & notHFile) << 9;
+}
+std::bitset<64> moveSouthEast(std::bitset<64> board) {
+  return (board & notHFile) >> 7;
+}
+std::bitset<64> moveWest(std::bitset<64> board) {
+  return (board & notAFile) >> 1;
+}
+std::bitset<64> moveSouthWest(std::bitset<64> board) {
+  return (board & notAFile) >> 9;
+}
+std::bitset<64> moveNorthWest(std::bitset<64> board) {
+  return (board & notAFile) << 7;
 }
 
+std::bitset<64> Bitboard::getWhitePieceSquares() {
+  return whitePawns | whiteRooks | whiteKnights | whiteBishops | whiteQueens |
+         whiteKing;
+}
+std::bitset<64> Bitboard::getBlackPieceSquares() {
+  return blackPawns | blackRooks | blackKnights | blackBishops | blackQueens |
+         blackKing;
+}
+std::bitset<64> Bitboard::getOccupiedSquares() {
+  return getWhitePieceSquares() | getBlackPieceSquares();
+}
 std::bitset<64> Bitboard::getEmptySqures() { return ~getOccupiedSquares(); }
 
 std::bitset<64> Bitboard::whitePawnPushSingleTarget() {
@@ -56,6 +81,18 @@ std::bitset<64> Bitboard::whitePawnPushSingleStart() {
 std::bitset<64> Bitboard::whitePawnPushDoubleStart() {
   return moveSouth(moveSouth(whitePawnPushDoubleTarget()));
 }
+std::bitset<64> Bitboard::whitePawnEastCaptureTarget() {
+  return moveNorthEast(whitePawns) & getBlackPieceSquares();
+}
+std::bitset<64> Bitboard::whitePawnWestCaptureTarget() {
+  return moveNorthWest(whitePawns) & getBlackPieceSquares();
+}
+std::bitset<64> Bitboard::whitePawnEastCaptureStart() {
+  return moveSouthWest(whitePawnEastCaptureTarget());
+}
+std::bitset<64> Bitboard::whitePawnWestCaptureStart() {
+  return moveSouthEast(whitePawnWestCaptureTarget());
+}
 
 std::bitset<64> Bitboard::blackPawnPushSingleTarget() {
   return moveSouth(blackPawns) & getEmptySqures();
@@ -71,14 +108,28 @@ std::bitset<64> Bitboard::blackPawnPushSingleStart() {
 std::bitset<64> Bitboard::blackPawnPushDoubleStart() {
   return moveNorth(moveNorth(blackPawnPushDoubleTarget()));
 }
+std::bitset<64> Bitboard::blackPawnEastCaptureTarget() {
+  return moveSouthEast(blackPawns) & getWhitePieceSquares();
+}
+std::bitset<64> Bitboard::blackPawnWestCaptureTarget() {
+  return moveSouthWest(blackPawns) & getWhitePieceSquares();
+}
+std::bitset<64> Bitboard::blackPawnEastCaptureStart() {
+  return moveSouthWest(blackPawnEastCaptureTarget());
+}
+std::bitset<64> Bitboard::blackPawnWestCaptureStart() {
+  return moveSouthEast(blackPawnWestCaptureTarget());
+}
 
-void addValidMovesToMoves(std::vector<Move> moves,
+// Handles 1-1 eg. Pawn Push relationships and 1-many eg. knight attacks.
+void addValidMovesToMoves(std::vector<Move> &moves,
                           std::bitset<64> startBitboard,
                           std::bitset<64> endBitboard) {
   while (true) {
-    int startIndex = setZeroAndReturnIndexOfLSB(startBitboard);
+    int tmp = setZeroAndReturnIndexOfLSB(startBitboard);
+    int startIndex = (tmp == -1 ? startIndex : tmp);
     int endIndex = setZeroAndReturnIndexOfLSB(endBitboard);
-    if (startIndex == -1 || endIndex == -1) {
+    if (tmp == -1 && endIndex == -1) {
       break;
     } else {
       moves.push_back(Move(startIndex, endIndex));
@@ -86,29 +137,52 @@ void addValidMovesToMoves(std::vector<Move> moves,
   }
 };
 
-std::vector<Move> Bitboard::returnAllWhitePawnMoves() {
-  std::vector<Move> moves;
+void Bitboard::addWhitePawnCaptureMoves(std::vector<Move> &moves) {
+  addValidMovesToMoves(moves, whitePawnEastCaptureStart(),
+                       whitePawnEastCaptureTarget());
+  addValidMovesToMoves(moves, whitePawnWestCaptureStart(),
+                       whitePawnWestCaptureTarget());
+}
+void Bitboard::addBlackPawnCaptureMoves(std::vector<Move> &moves) {
+  addValidMovesToMoves(moves, blackPawnEastCaptureStart(),
+                       blackPawnEastCaptureTarget());
+  addValidMovesToMoves(moves, blackPawnWestCaptureStart(),
+                       blackPawnWestCaptureTarget());
+}
+
+void Bitboard::addAllWhitePawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, whitePawnPushSingleStart(),
                        whitePawnPushSingleTarget());
   addValidMovesToMoves(moves, whitePawnPushDoubleStart(),
                        whitePawnPushDoubleTarget());
-  return moves;
+  addValidMovesToMoves(moves, whitePawnEastCaptureStart(),
+                       whitePawnEastCaptureTarget());
+  addValidMovesToMoves(moves, whitePawnWestCaptureStart(),
+                       whitePawnWestCaptureTarget());
 }
-
-std::vector<Move> Bitboard::returnAllBlackPawnMoves() {
-  std::vector<Move> moves;
+void Bitboard::addAllBlackPawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, blackPawnPushSingleStart(),
                        blackPawnPushSingleTarget());
   addValidMovesToMoves(moves, blackPawnPushDoubleStart(),
                        blackPawnPushDoubleTarget());
-  return moves;
+  addValidMovesToMoves(moves, blackPawnEastCaptureStart(),
+                       blackPawnEastCaptureTarget());
+  addValidMovesToMoves(moves, blackPawnWestCaptureStart(),
+                       blackPawnWestCaptureTarget());
 }
 
-std::vector<Move> Bitboard::returnAllValidPawnMoves() {
+void Bitboard::addAllPawnMoves(std::vector<Move> &moves) {
   if (whiteToMove) {
-    return returnAllWhitePawnMoves();
+    addAllWhitePawnMoves(moves);
   } else {
-    return returnAllBlackPawnMoves();
+    addAllBlackPawnMoves(moves);
+  }
+}
+
+void Bitboard::addAllKnightMoves(std::vector<Move> &moves) {
+  std::bitset<64> knightsBitboard = whiteKnights;
+  if (not whiteToMove) {
+    knightsBitboard = blackKnights;
   }
 }
 

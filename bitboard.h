@@ -1,7 +1,6 @@
-#ifndef BOARD_HPP
-#define BOARD_HPP
+#ifndef BOARD_H
+#define BOARD_H
 
-#include <array>
 #include <bitset>
 #include <vector>
 
@@ -19,14 +18,14 @@ No functions in this class carry side effects EXCEPT those clearly listed eg.
 makeMoveAndUpdateClassVariables(Move move);
 
 Some implementation functions will modify parameters but these should also be
-clealy listed by void func(&parameter), these functions tend to be more local in
-scope, otherwise a more declarative name is needed*/
+clealy listed by void func(&parameter) eg.
+addAllPawnMoves(std::vector<Move> &moves) */
 class Bitboard {
 public:
   Bitboard();
   void printBoard();
 
-private:
+public:
   bool whiteToMove;
 
   std::bitset<64> whitePawns;
@@ -43,6 +42,8 @@ private:
   std::bitset<64> blackQueens;
   std::bitset<64> blackKing;
 
+  std::bitset<64> getWhitePieceSquares();
+  std::bitset<64> getBlackPieceSquares();
   std::bitset<64> getOccupiedSquares();
   std::bitset<64> getEmptySqures();
 
@@ -50,17 +51,27 @@ private:
   std::bitset<64> whitePawnPushDoubleTarget();
   std::bitset<64> whitePawnPushSingleStart();
   std::bitset<64> whitePawnPushDoubleStart();
+  std::bitset<64> whitePawnEastCaptureTarget();
+  std::bitset<64> whitePawnWestCaptureTarget();
+  std::bitset<64> whitePawnEastCaptureStart();
+  std::bitset<64> whitePawnWestCaptureStart();
 
   std::bitset<64> blackPawnPushSingleTarget();
   std::bitset<64> blackPawnPushDoubleTarget();
   std::bitset<64> blackPawnPushSingleStart();
   std::bitset<64> blackPawnPushDoubleStart();
+  std::bitset<64> blackPawnEastCaptureTarget();
+  std::bitset<64> blackPawnWestCaptureTarget();
+  std::bitset<64> blackPawnEastCaptureStart();
+  std::bitset<64> blackPawnWestCaptureStart();
 
-  std::vector<Move> returnAllWhitePawnMoves();
-  std::vector<Move> returnAllBlackPawnMoves();
-  // Not implemented, it currently returns all moves; regardless of validity.
-  std::vector<Move> returnAllValidPawnMoves();
+  void addWhitePawnCaptureMoves(std::vector<Move> &moves);
+  void addBlackPawnCaptureMoves(std::vector<Move> &moves);
+  void addAllWhitePawnMoves(std::vector<Move> &moves);
+  void addAllBlackPawnMoves(std::vector<Move> &moves);
 
+  void addAllPawnMoves(std::vector<Move> &moves);
+  void addAllKnightMoves(std::vector<Move> &moves);
   void makeMoveAndUpdateClassVaribles(Move move);
 };
 #endif
