@@ -1,4 +1,4 @@
-#include "bitboard.h"
+#include "bitboard.hpp"
 #include <array>
 #include <bitset>
 #include <cctype>
@@ -323,63 +323,58 @@ void Bitboard::printBoard() {
 
 void Bitboard::loadFENString(std::string FENString) {
   clearAllData();
-  int currentIndex = 63;
-  int flippedInternalIndex = currentIndex ^ 7;
-  for (char ch : FENString) {
-    while (currentIndex >= 0) {
-      if (ch == '/') {
-        currentIndex++;
-        break;
-      } else if (ch == ' ') {
-        break;
-      }
-      if (isdigit(ch) && ch != ' ') {
-        std::cout << "I am a digit" << currentIndex;
-        currentIndex -= ch;
-      } else {
-        std::cout << ch << "||" << flippedInternalIndex;
-        switch (ch) {
-        case 'r':
-          blackRooks[flippedInternalIndex] = 1;
-          break;
-        case 'n':
-          blackKnights[flippedInternalIndex] = 1;
-          break;
-        case 'b':
-          blackBishops[flippedInternalIndex] = 1;
-          break;
-        case 'q':
-          blackQueens[flippedInternalIndex] = 1;
-          break;
-        case 'k':
-          blackKing[flippedInternalIndex] = 1;
-          break;
-        case 'R':
-          whiteRooks[flippedInternalIndex] = 1;
-          break;
-        case 'N':
-          whiteKnights[flippedInternalIndex] = 1;
-          break;
-        case 'B':
-          whiteBishops[flippedInternalIndex] = 1;
-          break;
-        case 'Q':
-          whiteQueens[flippedInternalIndex] = 1;
-          break;
-        case 'K':
-          whiteKing[flippedInternalIndex] = 1;
-        }
-        currentIndex--;
-      }
-      flippedInternalIndex = currentIndex ^ 7;
-      break;
-    }
-    if (currentIndex > 0) {
+  int nonFlippedInternalIndex = 63;
+  unsigned int i;
+  for (i = 0; i < FENString.size() && FENString[i] != ' '; i++) {
+    char ch = FENString[i];
+    std::cout << ch << "||" << i << nonFlippedInternalIndex;
+    if (ch == '/') {
       continue;
+    } else if (isdigit(ch)) {
+      nonFlippedInternalIndex -= ch - '0';
+    } else {
+      int flippedInternalIndex = nonFlippedInternalIndex ^ 7;
+      switch (ch) {
+      case 'r':
+        blackRooks[flippedInternalIndex] = 1;
+        break;
+      case 'n':
+        blackKnights[flippedInternalIndex] = 1;
+        break;
+      case 'b':
+        blackBishops[flippedInternalIndex] = 1;
+        break;
+      case 'q':
+        blackQueens[flippedInternalIndex] = 1;
+        break;
+      case 'k':
+        blackKing[flippedInternalIndex] = 1;
+        break;
+      case 'R':
+        whiteRooks[flippedInternalIndex] = 1;
+        break;
+      case 'N':
+        whiteKnights[flippedInternalIndex] = 1;
+        break;
+      case 'B':
+        whiteBishops[flippedInternalIndex] = 1;
+        break;
+      case 'Q':
+        whiteQueens[flippedInternalIndex] = 1;
+        break;
+      case 'p':
+        blackPawns[flippedInternalIndex] = 1;
+        break;
+      case 'P':
+        whitePawns[flippedInternalIndex] = 1;
+        break;
+      case 'K':
+        whiteKing[flippedInternalIndex] = 1;
+      }
+      nonFlippedInternalIndex--;
     }
-    whiteToMove = ch == 'w';
-    switch (ch) { break; }
   }
+  whiteToMove = FENString[i + 1] == 'w';
 }
 void Bitboard::clearAllData() {
   whiteToMove = true;

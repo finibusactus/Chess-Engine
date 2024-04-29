@@ -1,8 +1,7 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BOARD_HPP
+#define BOARD_HPP
 
 #include <bitset>
-#include <istream>
 #include <vector>
 
 struct Move {
