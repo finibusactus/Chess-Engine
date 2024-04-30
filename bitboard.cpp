@@ -79,7 +79,8 @@ std::bitset<64> Bitboard::getOccupiedSquares() {
 std::bitset<64> Bitboard::getEmptySqures() { return ~getOccupiedSquares(); }
 
 std::bitset<64> Bitboard::whitePawnPushSingleTarget() {
-  return moveNorth(whitePawns) & getEmptySqures();
+  const std::bitset<64> eighthRank = 0xFF00000000000000;
+  return moveNorth(whitePawns) & getEmptySqures() & ~eighthRank;
 }
 std::bitset<64> Bitboard::whitePawnPushDoubleTarget() {
   const std::bitset<64> fourthRank = 0x00000000FF000000;
@@ -105,7 +106,8 @@ std::bitset<64> Bitboard::whitePawnWestCaptureStart() {
   return moveSouthEast(whitePawnWestCaptureTarget());
 }
 std::bitset<64> Bitboard::blackPawnPushSingleTarget() {
-  return moveSouth(blackPawns) & getEmptySqures();
+  const std::bitset<64> firstRank = 0xFF;
+  return moveSouth(blackPawns) & getEmptySqures() & ~firstRank;
 }
 std::bitset<64> Bitboard::blackPawnPushDoubleTarget() {
   const std::bitset<64> fifthRank = 0x000000FF00000000;
@@ -175,11 +177,21 @@ bool Bitboard::isMoveEnPassant(Move move) {
   }
   return false;
 }
+bool Bitboard::isMovePawnPromotion(Move move) {
+  if (whiteToMove) {
+    return whitePawns[move.startIndex] &&
+           (move.startIndex >= 48 && move.startIndex <= 55);
+  } else {
+    return blackPawns[move.startIndex] &&
+           (move.startIndex >= 8 && move.startIndex <= 15);
+  }
+}
 
 // Handles 1-1 eg. Pawn Push relationships and 1-many eg. knight attacks.
 void addValidMovesToMoves(std::vector<Move> &moves,
                           std::bitset<64> startBitboard,
-                          std::bitset<64> endBitboard) {
+                          std::bitset<64> endBitboard,
+                          PieceNames promotedPieceName = WHITE_KING) {
   while (true) {
     int tmp = setZeroAndReturnIndexOfLSB(startBitboard);
     int startIndex = (tmp == -1 ? startIndex : tmp);
@@ -187,7 +199,7 @@ void addValidMovesToMoves(std::vector<Move> &moves,
     if (tmp == -1 && endIndex == -1) {
       break;
     } else {
-      moves.push_back(Move(startIndex, endIndex));
+      moves.push_back(Move(startIndex, endIndex, promotedPieceName));
     }
   }
 };
@@ -204,49 +216,81 @@ void Bitboard::addBlackPawnCaptureMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, blackPawnWestCaptureStart(),
                        blackPawnWestCaptureTarget());
 }
+void Bitboard::addWhiteEnPassantMoves(std::vector<Move> &moves) {
+  if (enPassantIndex == -1) {
+    return;
+  }
+  if (whitePawns[enPassantIndex - 7]) {
+    moves.push_back(Move(enPassantIndex - 7, enPassantIndex));
+  } else if (whitePawns[enPassantIndex - 9]) {
+    moves.push_back(Move(enPassantIndex - 9, enPassantIndex));
+  }
+}
+void Bitboard::addBlackEnPassantMoves(std::vector<Move> &moves) {
+  if (enPassantIndex == -1) {
+    return;
+  }
+  if (blackPawns[enPassantIndex - 7]) {
+    moves.push_back(Move(enPassantIndex - 7, enPassantIndex));
+  } else if (blackPawns[enPassantIndex - 9]) {
+    moves.push_back(Move(enPassantIndex - 9, enPassantIndex));
+  }
+}
+void Bitboard::addWhitePromotionMoves(std::vector<Move> &moves) {
+  std::bitset<64> seventhRank = 0xFF000000000000;
+  const std::bitset<64> pawnsAbleToPromoteTarget =
+      moveNorth(whitePawns & seventhRank) & getEmptySqures();
+  const std::bitset<64> pawnAbleToPromoteStart =
+      moveSouth(pawnsAbleToPromoteTarget);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       WHITE_ROOK);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       WHITE_KNIGHT);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       WHITE_BISHOP);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       WHITE_QUEEN);
+}
+void Bitboard::addBlackPromotionMoves(std::vector<Move> &moves) {
+  std::bitset<64> secondRank = 0xFF00;
+  const std::bitset<64> pawnsAbleToPromoteTarget =
+      moveSouth(whitePawns & secondRank) & getEmptySqures();
+  const std::bitset<64> pawnAbleToPromoteStart =
+      moveNorth(pawnsAbleToPromoteTarget);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       BLACK_ROOK);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       BLACK_KNIGHT);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       BLACK_BISHOP);
+  addValidMovesToMoves(moves, pawnAbleToPromoteStart, pawnsAbleToPromoteTarget,
+                       BLACK_QUEEN);
+}
 
 void Bitboard::addAllWhitePawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, whitePawnPushSingleStart(),
                        whitePawnPushSingleTarget());
   addValidMovesToMoves(moves, whitePawnPushDoubleStart(),
                        whitePawnPushDoubleTarget());
-  addValidMovesToMoves(moves, whitePawnEastCaptureStart(),
-                       whitePawnEastCaptureTarget());
-  addValidMovesToMoves(moves, whitePawnWestCaptureStart(),
-                       whitePawnWestCaptureTarget());
+  addWhitePawnCaptureMoves(moves);
+  addWhiteEnPassantMoves(moves);
+  addWhitePromotionMoves(moves);
 }
 void Bitboard::addAllBlackPawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, blackPawnPushSingleStart(),
                        blackPawnPushSingleTarget());
   addValidMovesToMoves(moves, blackPawnPushDoubleStart(),
                        blackPawnPushDoubleTarget());
-  addValidMovesToMoves(moves, blackPawnEastCaptureStart(),
-                       blackPawnEastCaptureTarget());
-  addValidMovesToMoves(moves, blackPawnWestCaptureStart(),
-                       blackPawnWestCaptureTarget());
+  addBlackPawnCaptureMoves(moves);
+  addBlackEnPassantMoves(moves);
+  addBlackPromotionMoves(moves);
 }
 
 void Bitboard::addAllPawnMoves(std::vector<Move> &moves) {
   if (whiteToMove) {
     addAllWhitePawnMoves(moves);
-    if (enPassantIndex == -1) {
-      return;
-    }
-    if (whitePawns[enPassantIndex - 7]) {
-      moves.push_back(Move(enPassantIndex - 7, enPassantIndex));
-    } else if (whitePawns[enPassantIndex - 9]) {
-      moves.push_back(Move(enPassantIndex - 9, enPassantIndex));
-    }
   } else {
     addAllBlackPawnMoves(moves);
-    if (enPassantIndex == -1) {
-      return;
-    }
-    if (blackPawns[enPassantIndex - 7]) {
-      moves.push_back(Move(enPassantIndex - 7, enPassantIndex));
-    } else if (blackPawns[enPassantIndex - 9]) {
-      moves.push_back(Move(enPassantIndex - 9, enPassantIndex));
-    }
   }
 }
 

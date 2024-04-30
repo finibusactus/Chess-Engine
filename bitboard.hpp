@@ -4,17 +4,26 @@
 #include <bitset>
 #include <vector>
 
-enum Pieces {
-
+enum PieceNames {
+  WHITE_ROOK,
+  WHITE_KNIGHT,
+  WHITE_BISHOP,
+  WHITE_QUEEN,
+  WHITE_KING,
+  BLACK_ROOK,
+  BLACK_KNIGHT,
+  BLACK_BISHOP,
+  BLACK_QUEEN,
+  BLACK_KING
 };
 
 struct Move {
   int startIndex;
   int endIndex;
-  Move(int startIndex, int endIndex) {
-    this->startIndex = startIndex;
-    this->endIndex = endIndex;
-  }
+  PieceNames promotedPieceName;
+  Move(int startIndex, int endIndex, PieceNames promotedPieceName = WHITE_KING)
+      : startIndex(startIndex), endIndex(endIndex),
+        promotedPieceName(promotedPieceName) {}
 };
 
 /*
@@ -33,7 +42,7 @@ public:
   void printBoard();
   void loadFENString(std::string FENString);
 
-public:
+private:
   bool whiteToMove;
   bool whiteCastleWest;
   bool whiteCastleEast;
@@ -60,6 +69,8 @@ public:
   std::bitset<64> getOccupiedSquares();
   std::bitset<64> getEmptySqures();
 
+  // These functions do not handle promotions and do not return anything for a
+  // pawn on the 7th / 2nd rank promoting.
   std::bitset<64> whitePawnPushSingleTarget();
   std::bitset<64> whitePawnPushDoubleTarget();
   std::bitset<64> whitePawnPushSingleStart();
@@ -80,9 +91,15 @@ public:
 
   bool isMoveDoublePawnPush(Move move);
   bool isMoveEnPassant(Move move);
+  bool isMovePawnPromotion(Move move);
 
   void addWhitePawnCaptureMoves(std::vector<Move> &moves);
   void addBlackPawnCaptureMoves(std::vector<Move> &moves);
+  void addWhiteEnPassantMoves(std::vector<Move> &moves);
+  void addBlackEnPassantMoves(std::vector<Move> &moves);
+  void addWhitePromotionMoves(std::vector<Move> &moves);
+  void addBlackPromotionMoves(std::vector<Move> &moves);
+
   void addAllWhitePawnMoves(std::vector<Move> &moves);
   void addAllBlackPawnMoves(std::vector<Move> &moves);
 
