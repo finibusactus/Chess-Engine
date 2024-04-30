@@ -4,6 +4,10 @@
 #include <bitset>
 #include <vector>
 
+enum Pieces {
+
+};
+
 struct Move {
   int startIndex;
   int endIndex;
@@ -31,6 +35,11 @@ public:
 
 public:
   bool whiteToMove;
+  bool whiteCastleWest;
+  bool whiteCastleEast;
+  bool blackCastleEast;
+  bool blackCastleWest;
+  int enPassantIndex;
 
   std::bitset<64> whitePawns;
   std::bitset<64> whiteRooks;
@@ -69,6 +78,9 @@ public:
   std::bitset<64> blackPawnEastCaptureStart();
   std::bitset<64> blackPawnWestCaptureStart();
 
+  bool isMoveDoublePawnPush(Move move);
+  bool isMoveEnPassant(Move move);
+
   void addWhitePawnCaptureMoves(std::vector<Move> &moves);
   void addBlackPawnCaptureMoves(std::vector<Move> &moves);
   void addAllWhitePawnMoves(std::vector<Move> &moves);
@@ -77,8 +89,11 @@ public:
   void addAllPawnMoves(std::vector<Move> &moves);
   void addAllKnightMoves(std::vector<Move> &moves);
   void addAllBishopAndQueenDiagonalMoves(std::vector<Move> &moves);
+  void addAllRookAndQueenHorizontalMoves(std::vector<Move> &moves);
+  void addAllKingMoves(std::vector<Move> &moves);
   void makeMoveAndUpdateClassVaribles(Move move);
 
   void clearAllData();
+  void restoreStartingChessPosition();
 };
 #endif
