@@ -194,12 +194,153 @@ bool Bitboard::isMovePawnPromotion(Move move) {
            (move.startIndex >= 8 && move.startIndex <= 15);
   }
 }
+
+bool isKingInCheckFromSlidingPieces(
+    std::function<std::bitset<64>(std::bitset<64>)> func,
+    std::bitset<64> kingBitboard, std::bitset<64> enemyPieces) {
+  std::bitset<64> tmp = kingBitboard;
+  for (int j = 0; j < 8; j++) {
+    tmp = func(tmp);
+    int LSBIndex = returnIndexOfLSB(tmp);
+    if (enemyPieces[LSBIndex]) {
+      return true;
+    }
+  }
+  return false;
+};
 bool Bitboard::InCheck(bool whiteSide) {
   if (whiteSide) {
-    int positionOfKing;
-    for (int i = 0; i < 64; i++) {
-      if (whiteKing[i]) {
-        positionOfKing = i;
+    std::bitset<64> blackPawnAttackerSquares =
+        (moveNorthEast(whiteKing) | moveNorthWest(whiteKing)) & blackPawns;
+    if (returnIndexOfLSB(blackPawnAttackerSquares) != -1) {
+      return true;
+    }
+    const std::array<std::tuple<int, int>, 8> possibleKnightMoves = {
+        std::make_tuple<int, int>(-1, 2),  std::make_tuple<int, int>(1, 2),
+        std::make_tuple<int, int>(2, 1),   std::make_tuple<int, int>(2, -1),
+        std::make_tuple<int, int>(1, -2),  std::make_tuple<int, int>(-1, -2),
+        std::make_tuple<int, int>(-2, -1), std::make_tuple<int, int>(-2, 1)};
+    for (std::tuple<int, int> offset : possibleKnightMoves) {
+      std::bitset<64> possibleStartSquare =
+          moveAnyDirection(whiteKing, std::get<0>(offset), std::get<1>(offset));
+      if (returnIndexOfLSB(possibleStartSquare & blackKnights) != -1) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorth, whiteKing,
+                                         blackRooks | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveEast, whiteKing,
+                                         blackRooks | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouth, whiteKing,
+                                         blackRooks | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveWest, whiteKing,
+                                         blackRooks | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorthEast, whiteKing,
+                                         blackBishops | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorthWest, whiteKing,
+                                         blackBishops | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouthEast, whiteKing,
+                                         blackBishops | blackQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouthWest, whiteKing,
+                                         blackBishops | blackQueens)) {
+        return true;
+      }
+      if (returnIndexOfLSB(moveNorth(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveEast(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouth(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveWest(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveNorthEast(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveNorthWest(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouthEast(whiteKing) & blackKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouthWest(whiteKing) & blackKing) != -1) {
+        return true;
+      }
+    }
+  } else {
+    std::bitset<64> whitePawnAttackerSquares =
+        (moveSouthEast(whiteKing) | moveSouthWest(whiteKing)) & blackPawns;
+    if (returnIndexOfLSB(whitePawnAttackerSquares) != -1) {
+      return true;
+    }
+    const std::array<std::tuple<int, int>, 8> possibleKnightMoves = {
+        std::make_tuple<int, int>(-1, 2),  std::make_tuple<int, int>(1, 2),
+        std::make_tuple<int, int>(2, 1),   std::make_tuple<int, int>(2, -1),
+        std::make_tuple<int, int>(1, -2),  std::make_tuple<int, int>(-1, -2),
+        std::make_tuple<int, int>(-2, -1), std::make_tuple<int, int>(-2, 1)};
+    for (std::tuple<int, int> offset : possibleKnightMoves) {
+      std::bitset<64> possibleStartSquare =
+          moveAnyDirection(blackKing, std::get<0>(offset), std::get<1>(offset));
+      if (returnIndexOfLSB(possibleStartSquare & whiteKnights) != -1) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorth, blackKing,
+                                         whiteRooks | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveEast, blackKing,
+                                         whiteRooks | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouth, blackKing,
+                                         whiteRooks | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveWest, blackKing,
+                                         whiteRooks | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorthEast, blackKing,
+                                         whiteBishops | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveNorthWest, blackKing,
+                                         whiteBishops | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouthEast, blackKing,
+                                         whiteBishops | whiteQueens)) {
+        return true;
+      }
+      if (isKingInCheckFromSlidingPieces(moveSouthWest, blackKing,
+                                         whiteBishops | whiteQueens)) {
+        return true;
+      }
+      if (returnIndexOfLSB(moveNorth(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveEast(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouth(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveWest(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveNorthEast(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveNorthWest(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouthEast(blackKing) & whiteKing) != -1) {
+        return true;
+      } else if (returnIndexOfLSB(moveSouthWest(blackKing) & whiteKing) != -1) {
+        return true;
       }
     }
   }
@@ -379,12 +520,9 @@ void addMovesForSlidingPieces(
     for (int j = 0; j < 8; j++) {
       pieceBitboard = func(pieceBitboard);
       int LSBIndex = returnIndexOfLSB(pieceBitboard);
-      if (LSBIndex == -1) {
-        break;
-      } else if (ownSquares[LSBIndex]) {
+      if (ownSquares[LSBIndex]) {
         break;
       } else if (enemySquares[LSBIndex]) {
-        ;
         moves.push_back(Move(i, LSBIndex));
         break;
       }
