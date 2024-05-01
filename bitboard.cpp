@@ -9,14 +9,24 @@
 #include <tuple>
 #include <vector>
 
-int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
+int returnIndexOfLSB(const std::bitset<64> bitboard) {
   for (int i = 0; i < 64; i++) {
     if (bitboard[i]) {
-      bitboard[i] = 0;
       return i;
     }
   }
   return -1;
+}
+
+int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
+  int i = returnIndexOfLSB(bitboard);
+  switch (i) {
+  case -1:
+    return -1;
+  default:
+    bitboard[i] = 0;
+    return i;
+  }
 }
 
 Bitboard::Bitboard() { restoreStartingChessPosition(); };
@@ -79,8 +89,7 @@ std::bitset<64> Bitboard::getOccupiedSquares() {
 std::bitset<64> Bitboard::getEmptySqures() { return ~getOccupiedSquares(); }
 
 std::bitset<64> Bitboard::whitePawnPushSingleTarget() {
-  const std::bitset<64> eighthRank = 0xFF00000000000000;
-  return moveNorth(whitePawns) & getEmptySqures() & ~eighthRank;
+  return moveNorth(whitePawns) & getEmptySqures();
 }
 std::bitset<64> Bitboard::whitePawnPushDoubleTarget() {
   const std::bitset<64> fourthRank = 0x00000000FF000000;
@@ -106,8 +115,7 @@ std::bitset<64> Bitboard::whitePawnWestCaptureStart() {
   return moveSouthEast(whitePawnWestCaptureTarget());
 }
 std::bitset<64> Bitboard::blackPawnPushSingleTarget() {
-  const std::bitset<64> firstRank = 0xFF;
-  return moveSouth(blackPawns) & getEmptySqures() & ~firstRank;
+  return moveSouth(blackPawns) & getEmptySqures();
 }
 std::bitset<64> Bitboard::blackPawnPushDoubleTarget() {
   const std::bitset<64> fifthRank = 0x000000FF00000000;
@@ -161,8 +169,8 @@ bool Bitboard::isMoveEnPassant(Move move) {
       return false;
     } else if (enPassantIndex != move.endIndex) {
       return false;
-    } else if (move.endIndex - 7 == move.startIndex |
-               move.endIndex - 9 == move.startIndex) {
+    } else if ((move.endIndex - 7 == move.startIndex) |
+               (move.endIndex - 9 == move.startIndex)) {
       return true;
     }
     return false;
@@ -171,8 +179,8 @@ bool Bitboard::isMoveEnPassant(Move move) {
     return false;
   } else if (enPassantIndex != move.endIndex) {
     return false;
-  } else if (move.endIndex + 7 == move.startIndex |
-             move.endIndex + 9 == move.startIndex) {
+  } else if ((move.endIndex + 7 == move.startIndex) |
+             (move.endIndex + 9 == move.startIndex)) {
     return true;
   }
   return false;
@@ -186,12 +194,29 @@ bool Bitboard::isMovePawnPromotion(Move move) {
            (move.startIndex >= 8 && move.startIndex <= 15);
   }
 }
+bool Bitboard::InCheck(bool whiteSide) {
+  if (whiteSide) {
+    int positionOfKing;
+    for (int i = 0; i < 64; i++) {
+      if (whiteKing[i]) {
+        positionOfKing = i;
+      }
+    }
+  }
+  return false;
+}
 
 // Handles 1-1 eg. Pawn Push relationships and 1-many eg. knight attacks.
 void addValidMovesToMoves(std::vector<Move> &moves,
                           std::bitset<64> startBitboard,
                           std::bitset<64> endBitboard,
                           PieceNames promotedPieceName = WHITE_KING) {
+  std::bitset<64> tmp = endBitboard;
+  std::bitset<64> tmp1 = startBitboard;
+  if (setZeroAndReturnIndexOfLSB(tmp) == -1 ||
+      setZeroAndReturnIndexOfLSB(tmp1) == -1) {
+    return;
+  }
   while (true) {
     int tmp = setZeroAndReturnIndexOfLSB(startBitboard);
     int startIndex = (tmp == -1 ? startIndex : tmp);
@@ -236,6 +261,7 @@ void Bitboard::addBlackEnPassantMoves(std::vector<Move> &moves) {
     moves.push_back(Move(enPassantIndex - 9, enPassantIndex));
   }
 }
+
 void Bitboard::addWhitePromotionMoves(std::vector<Move> &moves) {
   std::bitset<64> seventhRank = 0xFF000000000000;
   const std::bitset<64> pawnsAbleToPromoteTarget =
@@ -274,7 +300,15 @@ void Bitboard::addAllWhitePawnMoves(std::vector<Move> &moves) {
                        whitePawnPushDoubleTarget());
   addWhitePawnCaptureMoves(moves);
   addWhiteEnPassantMoves(moves);
-  addWhitePromotionMoves(moves);
+  for (Move move : moves) {
+    if (isMovePawnPromotion(move)) {
+      move.promotedPieceName = WHITE_QUEEN;
+      moves.push_back(Move(move.startIndex, move.endIndex, WHITE_ROOK));
+      moves.push_back(Move(move.startIndex, move.endIndex, WHITE_KNIGHT));
+      moves.push_back(Move(move.startIndex, move.endIndex, WHITE_BISHOP));
+      return;
+    }
+  }
 }
 void Bitboard::addAllBlackPawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, blackPawnPushSingleStart(),
@@ -282,8 +316,15 @@ void Bitboard::addAllBlackPawnMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, blackPawnPushDoubleStart(),
                        blackPawnPushDoubleTarget());
   addBlackPawnCaptureMoves(moves);
-  addBlackEnPassantMoves(moves);
-  addBlackPromotionMoves(moves);
+  for (Move move : moves) {
+    if (isMovePawnPromotion(move)) {
+      move.promotedPieceName = BLACK_QUEEN;
+      moves.push_back(Move(move.startIndex, move.endIndex, BLACK_ROOK));
+      moves.push_back(Move(move.startIndex, move.endIndex, BLACK_KNIGHT));
+      moves.push_back(Move(move.startIndex, move.endIndex, BLACK_BISHOP));
+      return;
+    }
+  }
 }
 
 void Bitboard::addAllPawnMoves(std::vector<Move> &moves) {
@@ -307,8 +348,6 @@ void Bitboard::addAllKnightMoves(std::vector<Move> &moves) {
   for (std::tuple<int, int> translation : possibleKnightMoves) {
     std::bitset<64> targetBitboard = moveAnyDirection(
         knightsBitboard, std::get<0>(translation), std::get<1>(translation));
-    std::cout << targetBitboard << "||" << knightsBitboard << 1 << '\n';
-    std::cout << std::get<0>(translation) << std::get<1>(translation) << '\n';
     if (whiteToMove) {
       targetBitboard &= ~getWhitePieceSquares();
     } else {
@@ -319,43 +358,56 @@ void Bitboard::addAllKnightMoves(std::vector<Move> &moves) {
                                           -std::get<0>(translation),
                                           -std::get<1>(translation)),
                          targetBitboard);
-    std::cout << targetBitboard << "||" << knightsBitboard << 2 << '\n';
   }
 }
 
 void addMovesForSlidingPieces(
     std::vector<Move> &moves,
     std::function<std::bitset<64>(std::bitset<64>)> func,
-    std::function<std::bitset<64>(std::bitset<64>)> oppositeFunc,
-    std::bitset<64> startBitboard, std::bitset<64> safeSquares) {
-  std::bitset<64> targetBitboard = startBitboard;
-  for (int i = 0; i < 8; i++) {
-    targetBitboard = func(targetBitboard);
-    targetBitboard &= safeSquares;
-    std::bitset<64> tmp = targetBitboard;
-    for (int j = 0; j <= i; j++) {
-      tmp = oppositeFunc(tmp);
+    std::bitset<64> startBitboard, std::bitset<64> emptySquares,
+    std::bitset<64> enemySquares) {
+  std::bitset<64> ownSquares = ~(emptySquares | enemySquares);
+  std::vector<int> arrayOfSlidingPieceIndexes;
+  for (int i = 0; i < 64; i++) {
+    if (startBitboard[i]) {
+      arrayOfSlidingPieceIndexes.push_back(i);
     }
-    addValidMovesToMoves(moves, tmp, targetBitboard);
+  }
+  for (int i : arrayOfSlidingPieceIndexes) {
+    std::bitset<64> pieceBitboard;
+    pieceBitboard[i] = 1;
+    for (int j = 0; j < 8; j++) {
+      pieceBitboard = func(pieceBitboard);
+      int LSBIndex = returnIndexOfLSB(pieceBitboard);
+      if (LSBIndex == -1) {
+        break;
+      } else if (ownSquares[LSBIndex]) {
+        break;
+      } else if (enemySquares[LSBIndex]) {
+        ;
+        moves.push_back(Move(i, LSBIndex));
+        break;
+      }
+      moves.push_back(Move(i, LSBIndex));
+    }
   }
 };
 void Bitboard::addAllBishopAndQueenDiagonalMoves(std::vector<Move> &moves) {
   auto addDiagonalMoves =
-      [&](std::function<std::bitset<64>(std::bitset<64>)> func,
-          std::function<std::bitset<64>(std::bitset<64>)> oppositeFunc) {
+      [&](std::function<std::bitset<64>(std::bitset<64>)> func) {
         std::bitset<64> startBitboard = whiteBishops | whiteQueens;
-        std::bitset<64> safeSquares = ~getWhitePieceSquares();
         if (!whiteToMove) {
           startBitboard = blackBishops | blackQueens;
-          safeSquares = ~getBlackPieceSquares();
+          addMovesForSlidingPieces(moves, func, startBitboard, getEmptySqures(),
+                                   getWhitePieceSquares());
         }
-        addMovesForSlidingPieces(moves, func, oppositeFunc, startBitboard,
-                                 safeSquares);
+        addMovesForSlidingPieces(moves, func, startBitboard, getEmptySqures(),
+                                 getBlackPieceSquares());
       };
-  addDiagonalMoves(moveNorthWest, moveSouthEast);
-  addDiagonalMoves(moveNorthEast, moveSouthWest);
-  addDiagonalMoves(moveSouthWest, moveNorthEast);
-  addDiagonalMoves(moveSouthEast, moveNorthWest);
+  addDiagonalMoves(moveNorthWest);
+  addDiagonalMoves(moveNorthEast);
+  addDiagonalMoves(moveSouthWest);
+  addDiagonalMoves(moveSouthEast);
 }
 void Bitboard::addAllRookAndQueenHorizontalMoves(std::vector<Move> &moves) {
   auto addHorizontalMoves =
@@ -367,8 +419,8 @@ void Bitboard::addAllRookAndQueenHorizontalMoves(std::vector<Move> &moves) {
           startBitboard = blackRooks | blackQueens;
           safeSquares = ~getBlackPieceSquares();
         }
-        addMovesForSlidingPieces(moves, func, oppositeFunc, startBitboard,
-                                 safeSquares);
+        addMovesForSlidingPieces(moves, func, startBitboard, getEmptySqures(),
+                                 getBlackPieceSquares());
       };
   addHorizontalMoves(moveNorth, moveSouth);
   addHorizontalMoves(moveSouth, moveNorth);
@@ -388,8 +440,8 @@ void Bitboard::addAllKingMoves(std::vector<Move> &moves) {
   std::bitset<64> tmp = board;
   setZeroAndReturnIndexOfLSB(tmp);
   // we should make sure that there is only one king: statement above deletes
-  // the current king; statement below should return -1 to signify the board is
-  // empty
+  // the current king; statement below should return -1 to signify the board
+  // is empty
   assert(setZeroAndReturnIndexOfLSB(tmp) == -1);
   std::bitset<64> availableMoves = moveNorth(board) | moveNorthEast(board) |
                                    moveSouthEast(board) | moveSouthWest(board) |
@@ -397,6 +449,13 @@ void Bitboard::addAllKingMoves(std::vector<Move> &moves) {
                                    moveSouth(board) | moveWest(board);
   availableMoves &= safeSquares;
   addValidMovesToMoves(moves, board, availableMoves);
+}
+void Bitboard::addAllMoves(std::vector<Move> &moves) {
+  addAllPawnMoves(moves);
+  addAllKnightMoves(moves);
+  addAllBishopAndQueenDiagonalMoves(moves);
+  addAllRookAndQueenHorizontalMoves(moves);
+  addAllKingMoves(moves);
 }
 
 void Bitboard::makeMoveAndUpdateClassVaribles(Move move) {
@@ -558,6 +617,9 @@ void Bitboard::loadFENString(std::string FENString) {
         break;
       case 'K':
         whiteKing[flippedInternalIndex] = 1;
+        break;
+      default:
+        throw "Invalid FEN String parsing";
       }
       nonFlippedInternalIndex--;
     }
@@ -569,12 +631,18 @@ void Bitboard::loadFENString(std::string FENString) {
     switch (ch) {
     case 'Q':
       whiteCastleWest = true;
+      break;
     case 'K':
       whiteCastleEast = true;
+      break;
     case 'q':
       blackCastleWest = true;
+      break;
     case 'k':
       blackCastleEast = true;
+      break;
+    default:
+      throw "Invalid FEN String parsing";
     }
   }
   std::map<std::string, int> mapping{

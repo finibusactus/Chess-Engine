@@ -21,9 +21,10 @@ struct Move {
   int startIndex;
   int endIndex;
   PieceNames promotedPieceName;
-  Move(int startIndex, int endIndex, PieceNames promotedPieceName = WHITE_KING)
-      : startIndex(startIndex), endIndex(endIndex),
-        promotedPieceName(promotedPieceName) {}
+  Move(int _startIndex, int _endIndex,
+       PieceNames _promotedPieceName = WHITE_KING)
+      : startIndex(_startIndex), endIndex(_endIndex),
+        promotedPieceName(_promotedPieceName) {}
 };
 
 /*
@@ -42,7 +43,7 @@ public:
   void printBoard();
   void loadFENString(std::string FENString);
 
-private:
+public:
   bool whiteToMove;
   bool whiteCastleWest;
   bool whiteCastleEast;
@@ -92,6 +93,7 @@ private:
   bool isMoveDoublePawnPush(Move move);
   bool isMoveEnPassant(Move move);
   bool isMovePawnPromotion(Move move);
+  bool InCheck(bool whiteSide);
 
   void addWhitePawnCaptureMoves(std::vector<Move> &moves);
   void addBlackPawnCaptureMoves(std::vector<Move> &moves);
@@ -108,6 +110,7 @@ private:
   void addAllBishopAndQueenDiagonalMoves(std::vector<Move> &moves);
   void addAllRookAndQueenHorizontalMoves(std::vector<Move> &moves);
   void addAllKingMoves(std::vector<Move> &moves);
+  void addAllMoves(std::vector<Move> &moves);
   void makeMoveAndUpdateClassVaribles(Move move);
 
   void clearAllData();
