@@ -93,7 +93,7 @@ public:
   bool isMoveDoublePawnPush(Move move);
   bool isMoveEnPassant(Move move);
   bool isMovePawnPromotion(Move move);
-  bool InCheck(bool whiteSide);
+  bool inCheck(bool whiteSide);
 
   void addWhitePawnCaptureMoves(std::vector<Move> &moves);
   void addBlackPawnCaptureMoves(std::vector<Move> &moves);

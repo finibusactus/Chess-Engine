@@ -197,18 +197,22 @@ bool Bitboard::isMovePawnPromotion(Move move) {
 
 bool isKingInCheckFromSlidingPieces(
     std::function<std::bitset<64>(std::bitset<64>)> func,
-    std::bitset<64> kingBitboard, std::bitset<64> enemyPieces) {
+    std::bitset<64> kingBitboard, std::bitset<64> enemyPieces,
+    std::bitset<64> ownPieces) {
   std::bitset<64> tmp = kingBitboard;
   for (int j = 0; j < 8; j++) {
     tmp = func(tmp);
     int LSBIndex = returnIndexOfLSB(tmp);
+    ;
     if (enemyPieces[LSBIndex]) {
       return true;
+    } else if (ownPieces[LSBIndex]) {
+      return false;
     }
   }
   return false;
-};
-bool Bitboard::InCheck(bool whiteSide) {
+}
+bool Bitboard::inCheck(bool whiteSide) {
   if (whiteSide) {
     std::bitset<64> blackPawnAttackerSquares =
         (moveNorthEast(whiteKing) | moveNorthWest(whiteKing)) & blackPawns;
@@ -227,35 +231,43 @@ bool Bitboard::InCheck(bool whiteSide) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorth, whiteKing,
-                                         blackRooks | blackQueens)) {
+                                         blackRooks | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveEast, whiteKing,
-                                         blackRooks | blackQueens)) {
+                                         blackRooks | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouth, whiteKing,
-                                         blackRooks | blackQueens)) {
+                                         blackRooks | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveWest, whiteKing,
-                                         blackRooks | blackQueens)) {
+                                         blackRooks | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorthEast, whiteKing,
-                                         blackBishops | blackQueens)) {
+                                         blackBishops | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorthWest, whiteKing,
-                                         blackBishops | blackQueens)) {
+                                         blackBishops | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouthEast, whiteKing,
-                                         blackBishops | blackQueens)) {
+                                         blackBishops | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouthWest, whiteKing,
-                                         blackBishops | blackQueens)) {
+                                         blackBishops | blackQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (returnIndexOfLSB(moveNorth(whiteKing) & blackKing) != -1) {
@@ -294,35 +306,43 @@ bool Bitboard::InCheck(bool whiteSide) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorth, blackKing,
-                                         whiteRooks | whiteQueens)) {
+                                         whiteRooks | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveEast, blackKing,
-                                         whiteRooks | whiteQueens)) {
+                                         whiteRooks | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouth, blackKing,
-                                         whiteRooks | whiteQueens)) {
+                                         whiteRooks | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveWest, blackKing,
-                                         whiteRooks | whiteQueens)) {
+                                         whiteRooks | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorthEast, blackKing,
-                                         whiteBishops | whiteQueens)) {
+                                         whiteBishops | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveNorthWest, blackKing,
-                                         whiteBishops | whiteQueens)) {
+                                         whiteBishops | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouthEast, blackKing,
-                                         whiteBishops | whiteQueens)) {
+                                         whiteBishops | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (isKingInCheckFromSlidingPieces(moveSouthWest, blackKing,
-                                         whiteBishops | whiteQueens)) {
+                                         whiteBishops | whiteQueens,
+                                         getEmptySqures())) {
         return true;
       }
       if (returnIndexOfLSB(moveNorth(blackKing) & whiteKing) != -1) {
