@@ -607,6 +607,73 @@ void Bitboard::addAllKingMoves(std::vector<Move> &moves) {
                                    moveSouth(board) | moveWest(board);
   availableMoves &= safeSquares;
   addValidMovesToMoves(moves, board, availableMoves);
+  if (whiteToMove) {
+    if (whiteCastleEast) {
+      if (not inCheck(true)) {
+        return;
+      }
+      whiteKing[4] = 0;
+      whiteKing[3] = 1;
+      if (not inCheck(true)) {
+        return;
+      }
+      whiteKing[3] = 0;
+      whiteKing[2] = 1;
+      if (not inCheck(true)) {
+        return;
+      }
+      moves.push_back(Move(4, 2));
+    }
+    if (whiteCastleWest) {
+      if (not inCheck(true)) {
+        return;
+      }
+      whiteKing[4] = 0;
+      whiteKing[5] = 1;
+      if (not inCheck(true)) {
+        return;
+      }
+      whiteKing[5] = 0;
+      whiteKing[6] = 1;
+      if (not inCheck(true)) {
+        return;
+      }
+      moves.push_back(Move(4, 6));
+    }
+    return;
+  }
+  if (blackCastleEast) {
+    if (not inCheck(false)) {
+      return;
+    }
+    blackKing[60] = 0;
+    blackKing[59] = 1;
+    if (not inCheck(false)) {
+      return;
+    }
+    blackKing[59] = 0;
+    blackKing[58] = 1;
+    if (not inCheck(false)) {
+      return;
+    }
+    moves.push_back(Move(60, 58));
+  }
+  if (blackCastleWest) {
+    if (not inCheck(false)) {
+      return;
+    }
+    blackKing[60] = 0;
+    blackKing[61] = 1;
+    if (not inCheck(false)) {
+      return;
+    }
+    blackKing[61] = 0;
+    blackKing[62] = 1;
+    if (not inCheck(false)) {
+      return;
+    }
+    moves.push_back(Move(60, 62));
+  }
 }
 void Bitboard::addAllMoves(std::vector<Move> &moves) {
   addAllPawnMoves(moves);
@@ -617,6 +684,55 @@ void Bitboard::addAllMoves(std::vector<Move> &moves) {
 }
 
 void Bitboard::makeMoveAndUpdateClassVaribles(Move move) {
+  if (whiteKing[move.startIndex] && move.endIndex == 2 &&
+      move.startIndex == 4 && whiteCastleEast) {
+    whiteCastleEast = false;
+    whiteCastleWest = false;
+    whiteKing[move.startIndex] = 0;
+    whiteKing[2] = 1;
+    makeMoveAndUpdateClassVaribles(Move(0, 3));
+  } else if (whiteKing[move.startIndex] && move.endIndex == 6 &&
+             move.startIndex == 4 && whiteCastleWest) {
+    whiteCastleEast = false;
+    whiteCastleWest = false;
+    whiteKing[move.startIndex] = 0;
+    whiteKing[6] = 1;
+    makeMoveAndUpdateClassVaribles(Move(7, 5));
+  } else if (blackKing[move.startIndex] && move.endIndex == 58 &&
+             move.startIndex == 60 && blackCastleEast) {
+    blackCastleEast = false;
+    blackCastleWest = false;
+    blackKing[move.startIndex] = 0;
+    blackKing[58] = 1;
+    makeMoveAndUpdateClassVaribles(Move(56, 59));
+  } else if (blackKing[move.startIndex] && move.endIndex == 62 &&
+             move.startIndex == 60 && blackCastleWest) {
+    blackCastleEast = false;
+    blackCastleWest = false;
+    blackKing[move.startIndex] = 0;
+    blackKing[62] = 1;
+    makeMoveAndUpdateClassVaribles(Move(63, 61));
+  }
+  if (whiteKing[move.startIndex]) {
+    whiteCastleEast = false;
+    whiteCastleWest = false;
+  } else if (blackKing[move.startIndex]) {
+    blackCastleEast = false;
+    blackCastleWest = false;
+  }
+  if (whiteRooks[move.startIndex]) {
+    if (move.startIndex == 0) {
+      whiteCastleEast = false;
+    } else if (move.startIndex == 7) {
+      whiteCastleWest = false;
+    }
+  } else if (whiteRooks[move.endIndex]) {
+    if (move.endIndex == 0) {
+      whiteCastleEast = false;
+    } else if (move.endIndex == 7) {
+      whiteCastleWest = false;
+    }
+  }
   enPassantIndex = -1;
   if (isMoveDoublePawnPush(move)) {
     enPassantIndex = whiteToMove ? move.startIndex + 8 : move.startIndex - 8;
@@ -730,88 +846,125 @@ void Bitboard::printBoard() {
 void Bitboard::loadFENString(std::string FENString) {
   clearAllData();
   int nonFlippedInternalIndex = 63;
-  unsigned int i;
-  for (i = 0; i < FENString.size() && FENString[i] != ' '; i++) {
-    char ch = FENString[i];
-    if (ch == '/') {
-      continue;
-    } else if (isdigit(ch)) {
-      nonFlippedInternalIndex -= ch - '0';
-    } else {
-      int flippedInternalIndex = nonFlippedInternalIndex ^ 7;
-      switch (ch) {
-      case 'r':
-        blackRooks[flippedInternalIndex] = 1;
-        break;
-      case 'n':
-        blackKnights[flippedInternalIndex] = 1;
-        break;
-      case 'b':
-        blackBishops[flippedInternalIndex] = 1;
-        break;
-      case 'q':
-        blackQueens[flippedInternalIndex] = 1;
-        break;
-      case 'k':
-        blackKing[flippedInternalIndex] = 1;
-        break;
-      case 'R':
-        whiteRooks[flippedInternalIndex] = 1;
-        break;
-      case 'N':
-        whiteKnights[flippedInternalIndex] = 1;
-        break;
-      case 'B':
-        whiteBishops[flippedInternalIndex] = 1;
-        break;
-      case 'Q':
-        whiteQueens[flippedInternalIndex] = 1;
-        break;
-      case 'p':
-        blackPawns[flippedInternalIndex] = 1;
-        break;
-      case 'P':
-        whitePawns[flippedInternalIndex] = 1;
-        break;
-      case 'K':
-        whiteKing[flippedInternalIndex] = 1;
-        break;
-      default:
-        throw "Invalid FEN String parsing";
-      }
+  int i = 0;
+  do {
+    int flippedInternalIndex = nonFlippedInternalIndex ^ 7;
+    switch (FENString[i]) {
+    case 'r':
+      blackRooks[flippedInternalIndex] = 1;
       nonFlippedInternalIndex--;
-    }
-  }
-  char ch = FENString[i];
-  whiteToMove = FENString[i + 1] == 'w';
-  for (i += 3; i < FENString.size() and ch != ' '; i++) {
-    ch = FENString[i];
-    switch (ch) {
-    case 'Q':
-      whiteCastleWest = true;
       break;
-    case 'K':
-      whiteCastleEast = true;
+    case 'n':
+      blackKnights[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'b':
+      blackBishops[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
       break;
     case 'q':
-      blackCastleWest = true;
+      blackQueens[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
       break;
     case 'k':
-      blackCastleEast = true;
+      blackKing[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
       break;
+    case 'R':
+      whiteRooks[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'N':
+      whiteKnights[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'B':
+      whiteBishops[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'Q':
+      whiteQueens[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'p':
+      blackPawns[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'P':
+      whitePawns[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case 'K':
+      whiteKing[flippedInternalIndex] = 1;
+      nonFlippedInternalIndex--;
+      break;
+    case '/':
+      break;
+    case '1':
+      nonFlippedInternalIndex -= 1;
+    case '2':
+      nonFlippedInternalIndex -= 2;
+    case '3':
+      nonFlippedInternalIndex -= 3;
+    case '4':
+      nonFlippedInternalIndex -= 4;
+    case '5':
+      nonFlippedInternalIndex -= 5;
+    case '6':
+      nonFlippedInternalIndex -= 6;
+    case '7':
+      nonFlippedInternalIndex -= 7;
+    case '8':
+      nonFlippedInternalIndex -= 8;
     default:
       throw "Invalid FEN String parsing";
     }
+    i++;
+  } while (FENString[i] != ' ');
+  i++;
+  whiteToMove = FENString[i] == 'w';
+  i += 2;
+  char ch = FENString[i];
+  if (ch == '/') {
+    continue;
+  } else if (isdigit(ch)) {
+    nonFlippedInternalIndex -= ch - '0';
+  } else {
+    int flippedInternalIndex = nonFlippedInternalIndex ^ 7;
+
+    nonFlippedInternalIndex--;
   }
-  std::map<std::string, int> mapping{
-      {"a3", 16}, {"b3", 17}, {"c3", 18}, {"d3", 19}, {"e3", 20}, {"f3", 21},
-      {"f3", 22}, {"g3", 23}, {"a6", 40}, {"b6", 41}, {"c6", 42}, {"d6", 43},
-      {"e6", 44}, {"f6", 45}, {"f6", 46}, {"g6", 47}};
-  for (auto square : mapping) {
-    if (FENString.find(square.first)) {
-      continue;
-    }
+}
+char ch = FENString[i];
+whiteToMove = FENString[i + 1] == 'w';
+for (i += 3; i < FENString.size() and ch != ' '; i++) {
+  ch = FENString[i];
+  switch (ch) {
+  case 'Q':
+    whiteCastleWest = true;
+    break;
+  case 'K':
+    whiteCastleEast = true;
+    break;
+  case 'q':
+    blackCastleWest = true;
+    break;
+  case 'k':
+    blackCastleEast = true;
+    break;
+  default:
+    throw "Invalid FEN String parsing";
   }
+}
+std::map<std::string, int> mapping{
+    {"a3", 16}, {"b3", 17}, {"c3", 18}, {"d3", 19}, {"e3", 20}, {"f3", 21},
+    {"f3", 22}, {"g3", 23}, {"a6", 40}, {"b6", 41}, {"c6", 42}, {"d6", 43},
+    {"e6", 44}, {"f6", 45}, {"f6", 46}, {"g6", 47}};
+for (auto square : mapping) {
+  if (FENString.find(square.first)) {
+    continue;
+  }
+}
 }
 void Bitboard::clearAllData() {
   whiteToMove = true;
