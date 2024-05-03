@@ -14,17 +14,22 @@ enum PieceNames {
   BLACK_KNIGHT,
   BLACK_BISHOP,
   BLACK_QUEEN,
-  BLACK_KING
+  BLACK_KING,
+  NONE
 };
 
 struct Move {
   int startIndex;
   int endIndex;
   PieceNames promotedPieceName;
-  Move(int _startIndex, int _endIndex,
-       PieceNames _promotedPieceName = WHITE_KING)
+  PieceNames capturedPieceName;
+  bool isMoveEnPasssant;
+  Move(int _startIndex, int _endIndex, PieceNames _promotedPieceName = NONE,
+       PieceNames _capturedPieceName = NONE, bool _isMoveEnPassant = false)
       : startIndex(_startIndex), endIndex(_endIndex),
-        promotedPieceName(_promotedPieceName) {}
+        promotedPieceName(_promotedPieceName),
+        capturedPieceName(_capturedPieceName),
+        isMoveEnPasssant(_isMoveEnPassant) {}
 };
 
 /*

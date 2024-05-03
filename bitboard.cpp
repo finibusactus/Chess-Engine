@@ -2,7 +2,6 @@
 #include <array>
 #include <bitset>
 #include <cassert>
-#include <cctype>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -203,7 +202,9 @@ bool isKingInCheckFromSlidingPieces(
   for (int j = 0; j < 8; j++) {
     tmp = func(tmp);
     int LSBIndex = returnIndexOfLSB(tmp);
-    ;
+    if (LSBIndex == -1) {
+      continue;
+    }
     if (enemyPieces[LSBIndex]) {
       return true;
     } else if (ownPieces[LSBIndex]) {
@@ -371,7 +372,7 @@ bool Bitboard::inCheck(bool whiteSide) {
 void addValidMovesToMoves(std::vector<Move> &moves,
                           std::bitset<64> startBitboard,
                           std::bitset<64> endBitboard,
-                          PieceNames promotedPieceName = WHITE_KING) {
+                          PieceNames promotedPieceName = NONE) {
   std::bitset<64> tmp = endBitboard;
   std::bitset<64> tmp1 = startBitboard;
   if (setZeroAndReturnIndexOfLSB(tmp) == -1 ||
@@ -609,70 +610,94 @@ void Bitboard::addAllKingMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, board, availableMoves);
   if (whiteToMove) {
     if (whiteCastleEast) {
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
         return;
       }
       whiteKing[4] = 0;
       whiteKing[3] = 1;
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
+        whiteKing[3] = 0;
+        whiteKing[4] = 1;
         return;
       }
       whiteKing[3] = 0;
       whiteKing[2] = 1;
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
+        whiteKing[2] = 0;
+        whiteKing[4] = 1;
         return;
       }
       moves.push_back(Move(4, 2));
+      whiteKing[2] = 0;
+      whiteKing[4] = 1;
     }
     if (whiteCastleWest) {
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
         return;
       }
       whiteKing[4] = 0;
       whiteKing[5] = 1;
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
+        whiteKing[4] = 1;
+        whiteKing[5] = 0;
         return;
       }
       whiteKing[5] = 0;
       whiteKing[6] = 1;
-      if (not inCheck(true)) {
+      if (inCheck(true)) {
+        whiteKing[6] = 0;
+        whiteKing[4] = 1;
         return;
       }
       moves.push_back(Move(4, 6));
+      whiteKing[6] = 0;
+      whiteKing[4] = 1;
     }
     return;
   }
   if (blackCastleEast) {
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
       return;
     }
     blackKing[60] = 0;
     blackKing[59] = 1;
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
+      blackKing[59] = 0;
+      blackKing[60] = 1;
       return;
     }
     blackKing[59] = 0;
     blackKing[58] = 1;
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
+      blackKing[58] = 0;
+      blackKing[60] = 1;
       return;
     }
     moves.push_back(Move(60, 58));
+    blackKing[58] = 0;
+    blackKing[60] = 1;
   }
   if (blackCastleWest) {
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
       return;
     }
     blackKing[60] = 0;
     blackKing[61] = 1;
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
+      blackKing[61] = 0;
+      blackKing[60] = 1;
       return;
     }
     blackKing[61] = 0;
     blackKing[62] = 1;
-    if (not inCheck(false)) {
+    if (inCheck(false)) {
+      blackKing[62] = 0;
+      blackKing[60] = 1;
       return;
     }
     moves.push_back(Move(60, 62));
+    blackKing[62] = 0;
+    blackKing[60] = 1;
   }
 }
 void Bitboard::addAllMoves(std::vector<Move> &moves) {
@@ -902,20 +927,28 @@ void Bitboard::loadFENString(std::string FENString) {
       break;
     case '1':
       nonFlippedInternalIndex -= 1;
+      break;
     case '2':
       nonFlippedInternalIndex -= 2;
+      break;
     case '3':
       nonFlippedInternalIndex -= 3;
+      break;
     case '4':
       nonFlippedInternalIndex -= 4;
+      break;
     case '5':
       nonFlippedInternalIndex -= 5;
+      break;
     case '6':
       nonFlippedInternalIndex -= 6;
+      break;
     case '7':
       nonFlippedInternalIndex -= 7;
+      break;
     case '8':
       nonFlippedInternalIndex -= 8;
+      break;
     default:
       throw "Invalid FEN String parsing";
     }
@@ -924,47 +957,35 @@ void Bitboard::loadFENString(std::string FENString) {
   i++;
   whiteToMove = FENString[i] == 'w';
   i += 2;
-  char ch = FENString[i];
-  if (ch == '/') {
-    continue;
-  } else if (isdigit(ch)) {
-    nonFlippedInternalIndex -= ch - '0';
-  } else {
-    int flippedInternalIndex = nonFlippedInternalIndex ^ 7;
-
-    nonFlippedInternalIndex--;
+  while (FENString[i] != ' ') {
+    switch (FENString[i]) {
+    case 'Q':
+      whiteCastleWest = true;
+      break;
+    case 'K':
+      whiteCastleEast = true;
+      break;
+    case 'q':
+      blackCastleWest = true;
+      break;
+    case 'k':
+      blackCastleEast = true;
+      break;
+    default:
+      throw "Invalid FEN String parsing";
+    }
+    i++;
   }
-}
-char ch = FENString[i];
-whiteToMove = FENString[i + 1] == 'w';
-for (i += 3; i < FENString.size() and ch != ' '; i++) {
-  ch = FENString[i];
-  switch (ch) {
-  case 'Q':
-    whiteCastleWest = true;
-    break;
-  case 'K':
-    whiteCastleEast = true;
-    break;
-  case 'q':
-    blackCastleWest = true;
-    break;
-  case 'k':
-    blackCastleEast = true;
-    break;
-  default:
-    throw "Invalid FEN String parsing";
+  std::map<std::string, int> mapping{
+      {"a3", 16}, {"b3", 17}, {"c3", 18}, {"d3", 19}, {"e3", 20}, {"f3", 21},
+      {"f3", 22}, {"g3", 23}, {"a6", 40}, {"b6", 41}, {"c6", 42}, {"d6", 43},
+      {"e6", 44}, {"f6", 45}, {"f6", 46}, {"g6", 47}};
+  for (auto square : mapping) {
+    if (FENString.find(square.first)) {
+      enPassantIndex = square.second;
+      return;
+    }
   }
-}
-std::map<std::string, int> mapping{
-    {"a3", 16}, {"b3", 17}, {"c3", 18}, {"d3", 19}, {"e3", 20}, {"f3", 21},
-    {"f3", 22}, {"g3", 23}, {"a6", 40}, {"b6", 41}, {"c6", 42}, {"d6", 43},
-    {"e6", 44}, {"f6", 45}, {"f6", 46}, {"g6", 47}};
-for (auto square : mapping) {
-  if (FENString.find(square.first)) {
-    continue;
-  }
-}
 }
 void Bitboard::clearAllData() {
   whiteToMove = true;
