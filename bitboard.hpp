@@ -5,11 +5,13 @@
 #include <vector>
 
 enum PieceNames {
+  WHITE_PAWN,
   WHITE_ROOK,
   WHITE_KNIGHT,
   WHITE_BISHOP,
   WHITE_QUEEN,
   WHITE_KING,
+  BLACK_PAWN,
   BLACK_ROOK,
   BLACK_KNIGHT,
   BLACK_BISHOP,
@@ -95,6 +97,7 @@ public:
   std::bitset<64> blackPawnEastCaptureStart();
   std::bitset<64> blackPawnWestCaptureStart();
 
+  PieceNames nameOfPieceThatLiesOnSquare(int squareIndex);
   bool isMoveDoublePawnPush(Move move);
   bool isMoveEnPassant(Move move);
   bool isMovePawnPromotion(Move move);

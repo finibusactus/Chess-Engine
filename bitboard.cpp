@@ -30,14 +30,14 @@ int setZeroAndReturnIndexOfLSB(std::bitset<64> &bitboard) {
 
 Bitboard::Bitboard() { restoreStartingChessPosition(); };
 
-std::bitset<64> notAFile = ~0x0101010101010101;
-std::bitset<64> notHFile = ~0x8080808080808080;
 std::bitset<64> moveNorth(const std::bitset<64> board) { return board << 8; }
 std::bitset<64> moveSouth(const std::bitset<64> board) { return board >> 8; }
 std::bitset<64> moveEast(std::bitset<64> board) {
+  std::bitset<64> notHFile = ~0x8080808080808080;
   return (board & notHFile) << 1;
 }
 std::bitset<64> moveWest(std::bitset<64> board) {
+  std::bitset<64> notAFile = ~0x0101010101010101;
   return (board & notAFile) >> 1;
 }
 std::bitset<64> moveSouthEast(std::bitset<64> board) {
@@ -134,12 +134,41 @@ std::bitset<64> Bitboard::blackPawnWestCaptureTarget() {
   return moveSouthWest(blackPawns) & getWhitePieceSquares();
 }
 std::bitset<64> Bitboard::blackPawnEastCaptureStart() {
-  return moveSouthWest(blackPawnEastCaptureTarget());
+  return moveNorthWest(blackPawnEastCaptureTarget());
 }
 std::bitset<64> Bitboard::blackPawnWestCaptureStart() {
-  return moveSouthEast(blackPawnWestCaptureTarget());
+  return moveNorthEast(blackPawnWestCaptureTarget());
 }
 
+PieceNames Bitboard::nameOfPieceThatLiesOnSquare(int squareIndex) {
+  if (whitePawns[squareIndex]) {
+    return WHITE_PAWN;
+  } else if (whiteRooks[squareIndex]) {
+    return WHITE_ROOK;
+  } else if (whiteKnights[squareIndex]) {
+    return WHITE_KNIGHT;
+  } else if (whiteBishops[squareIndex]) {
+    return WHITE_BISHOP;
+  } else if (whiteQueens[squareIndex]) {
+    return WHITE_QUEEN;
+  } else if (whiteKing[squareIndex]) {
+    return WHITE_KING;
+  } else if (blackPawns[squareIndex]) {
+    return BLACK_PAWN;
+  } else if (blackRooks[squareIndex]) {
+    return BLACK_ROOK;
+  } else if (blackKnights[squareIndex]) {
+    return BLACK_KNIGHT;
+  } else if (blackBishops[squareIndex]) {
+    return BLACK_BISHOP;
+  } else if (blackQueens[squareIndex]) {
+    return BLACK_QUEEN;
+  } else if (blackKing[squareIndex]) {
+    return BLACK_KING;
+  } else {
+    return NONE;
+  }
+}
 bool Bitboard ::isMoveDoublePawnPush(Move move) {
   if (whiteToMove) {
     if (not whitePawns[move.startIndex]) {
@@ -369,10 +398,12 @@ bool Bitboard::inCheck(bool whiteSide) {
 }
 
 // Handles 1-1 eg. Pawn Push relationships and 1-many eg. knight attacks.
-void addValidMovesToMoves(std::vector<Move> &moves,
-                          std::bitset<64> startBitboard,
-                          std::bitset<64> endBitboard,
-                          PieceNames promotedPieceName = NONE) {
+void addValidMovesToMoves(
+    std::vector<Move> &moves, std::bitset<64> startBitboard,
+    std::bitset<64> endBitboard, PieceNames promotedPieceName = NONE,
+    std::function<PieceNames(int squareIndex)> func = [](int squareIndex) {
+      return NONE;
+    }) {
   std::bitset<64> tmp = endBitboard;
   std::bitset<64> tmp1 = startBitboard;
   if (setZeroAndReturnIndexOfLSB(tmp) == -1 ||
@@ -386,14 +417,15 @@ void addValidMovesToMoves(std::vector<Move> &moves,
     if (tmp == -1 && endIndex == -1) {
       break;
     } else {
-      moves.push_back(Move(startIndex, endIndex, promotedPieceName));
+      moves.push_back(
+          Move(startIndex, endIndex, promotedPieceName, func(endIndex)));
     }
   }
 };
 
 void Bitboard::addWhitePawnCaptureMoves(std::vector<Move> &moves) {
   addValidMovesToMoves(moves, whitePawnEastCaptureStart(),
-                       whitePawnEastCaptureTarget());
+                       whitePawnEastCaptureTarget(), NONE);
   addValidMovesToMoves(moves, whitePawnWestCaptureStart(),
                        whitePawnWestCaptureTarget());
 }
@@ -955,7 +987,7 @@ void Bitboard::loadFENString(std::string FENString) {
     i++;
   } while (FENString[i] != ' ');
   i++;
-  whiteToMove = FENString[i] == 'w';
+  whiteToMove = (FENString[i] == 'w');
   i += 2;
   while (FENString[i] != ' ') {
     switch (FENString[i]) {
@@ -981,7 +1013,7 @@ void Bitboard::loadFENString(std::string FENString) {
       {"f3", 22}, {"g3", 23}, {"a6", 40}, {"b6", 41}, {"c6", 42}, {"d6", 43},
       {"e6", 44}, {"f6", 45}, {"f6", 46}, {"g6", 47}};
   for (auto square : mapping) {
-    if (FENString.find(square.first)) {
+    if (FENString.find(square.first) < 64) {
       enPassantIndex = square.second;
       return;
     }
