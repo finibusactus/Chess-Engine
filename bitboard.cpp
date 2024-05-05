@@ -573,6 +573,9 @@ void addMovesForSlidingPieces(
     for (int j = 0; j < 8; j++) {
       pieceBitboard = func(pieceBitboard);
       int LSBIndex = returnIndexOfLSB(pieceBitboard);
+      if (LSBIndex == -1) {
+        continue;
+      }
       if (ownSquares[LSBIndex]) {
         break;
       } else if (enemySquares[LSBIndex]) {
